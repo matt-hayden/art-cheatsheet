@@ -196,10 +196,12 @@ EOF
 
 - For interaction with files based on the output of another command (like `git`), use `fpp` ([PathPicker](https://github.com/facebook/PathPicker)).
 
-- For a simple web server for all files in the current directory (and subdirs), available to anyone on your network, use:
-`python -m SimpleHTTPServer 7777` (for port 7777 and Python 2) and `python -m http.server 7777` (for port 7777 and Python 3).
+- For a simple web server for all files in the current directory (and subdirs),
+  available to anyone on your network, you have several choices:
 
-- For running a command as another user, use `sudo`. Defaults to running as root; use `-u` to specify another user. Use `-i` to login as that user (you will be asked for _your_ password).
+  - Python 2: `python -m SimpleHTTPServer 7777`
+  - Python 3: `python -m http.server 7777`
+  - busybox: `busybox httpd -p 7777`
 
 - For switching the shell to another user, use `su username` or `su - username`. The latter with "-" gets an environment as if another user just logged in. Omitting the username defaults to root. You will be asked for the password _of the user you are switching to_.
 
@@ -214,9 +216,40 @@ EOF
 
 ## Processing files and data
 
-- To locate a file by name in the current directory, `find . -iname '*something*'` (or similar). To find a file anywhere by name, use `locate something` (but bear in mind `updatedb` may not have indexed recently created files).
+- To recurse filenames in the current directory, `find `_`haystack`_` -iname '*`_`needle`_`*'` (or similar).
+  
+    | Variants of *find* |   |
+    | :---           | :---:            |
+    | GNU `find`     | Linux servers    |
+    | `busybox find` | Embedded systems |
+    | BSD `find`     | MacOS            |
+    [ Unfortunately, these differ in their features and command-line arguments. GNU `find` is the most popular and possibly found on MacOS as `gfind`. ]
 
-- For general searching through source or data files, there are several options more advanced or faster than `grep -r`, including (in rough order from older to newer) [`ack`](https://github.com/beyondgrep/ack2), [`ag`](https://github.com/ggreer/the_silver_searcher) ("the silver searcher"), and [`rg`](https://github.com/BurntSushi/ripgrep) (ripgrep).
+- If *find* takes too long, to quickly list through all files on the system,
+  use `locate `_`needle`_`` (but bear in mind it relies on `updatedb` in the
+  background to pre-populate an index, so it misses recently created files and
+  falsely includes recently-deleted ones).
+
+- To recurse text matches within files, `grep -r` is provided almost everywhere. 
+
+    | Variants of *grep*                                    |                       |
+    | :---                                                  | :---:                 |
+    | [`ack`](https://github.com/beyondgrep/ack2)           |                       |
+    | [`ugrep`](https://ugrep.com/)                         |                       |
+    | [`ag`](https://github.com/ggreer/the_silver_searcher) | "the silver searcher" |
+    | [`rg`](https://github.com/BurntSushi/ripgrep)         | ripgrep               |
+    | `busybox grep`                                        |                       |
+
+  Each of these tries to support at least a useful subset of standard *grep* options:
+
+    | Argument:       |                                        |
+    | :--             | :--                                    |
+    | `-i`            | Case-insensitive                       |
+    | `-B `_`number`_ | Print _number_ lines before each match |
+    | `-A `_`number`_ | Print _number_ lines after each match  |
+    | `-C `_`number`_ | Print _number_ lines around each match |
+    | `-l`            | Show only filenames                    |
+    | `-o`            | Show only the matching text            |
 
 - To convert HTML to text: `lynx -dump -stdin`
 
@@ -369,13 +402,47 @@ A few examples of piecing together commands:
       diff <(jq --sort-keys . < file1.json) <(jq --sort-keys . < file2.json) | colordiff | less -R
 ```
 
-- Use `grep . *` to quickly examine the contents of all files in a directory (so each line is paired with the filename), or `head -100 *` (so each file has a heading). This can be useful for directories filled with config settings like those in `/sys`, `/proc`, `/etc`.
+- Search through logs,
 
+    ```
+    zcat log.1.gz | grep -B 10 -i panic
+    ```
+
+    This pipeline:
+
+    1. Decompresses the logfile into the pipline
+
+    2. *grep* reads line by line to match **panic**
+
+    3. *grep* prints the 10 lines before **panic**.
+
+- Edit all the files which might contain a sensitive token,
+    
+    ```
+    nano $( grep -rl ghp_ . )
+    ```
+
+    This pipeline:
+
+    1. Runs *grep* recursively for `ghp_` but only produces filenames, which then ...
+
+    2. Become arguments for the text editor nano
 
 - Summing all numbers in the third column of a text file (this is probably 3X faster and 3X less code than equivalent Python):
 ```sh
       awk '{ x += $3 } END { print x }' myfile
 ```
+
+- Extract the second column of a CSV:
+
+  ```sh
+  curl -fL 'https://raw.githubusercontent.com/fivethirtyeight/data/master/bob-ross/elements-by-episode.csv' \
+      | awk 'BEGIN {FPAT = "([^,]*)|(\"[^\"]+\")"} { print $2 }'
+  ```
+
+  Here, FPAT is a pattern for *awk* to handle the CSV format. Newer GNU
+  awk might be installed as *gawk*, which does this better with a `--csv`
+  option.
 
 - To see sizes/dates on a tree of files, this is like a recursive `ls -l` but is easier to read than `ls -lR`:
 ```sh
@@ -404,7 +471,7 @@ A few examples of piecing together commands:
 
 ## Obscure but useful
 
-- `expr`: perform arithmetic or boolean operations or evaluate regular expressions
+- `expr`: perform arithmetic or boolean operations or evaluate regular expressions. This exists because the original shell lacks arithmetic.
 
 - `m4`: simple macro processor
 
@@ -500,7 +567,7 @@ A few examples of piecing together commands:
 
 - `cssh`: visual concurrent shell
 
-- `rsync`: sync files and folders over SSH or in local file system
+- `rsync`: sync files and folders over SSH (when *rsync* is on both ends) or in local file system. 
 
 - [`wireshark`](https://wireshark.org/) and [`tshark`](https://www.wireshark.org/docs/wsug_html_chunked/AppToolstshark.html): packet capture and network debugging
 
