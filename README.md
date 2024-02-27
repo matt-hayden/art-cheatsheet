@@ -205,6 +205,15 @@ EOF
 
 - For switching the shell to another user, use `su username` or `su - username`. The latter with "-" gets an environment as if another user just logged in. Omitting the username defaults to root. You will be asked for the password _of the user you are switching to_.
 
+- For running a command as another user, use `sudo`. It will prompt for *your* password.
+
+| Command                           |                                                                                                                                                |
+| :---                              | :---                                                                                                                                           |
+| `sudo `_`command`_`               | Temporarily elevates to the *root* user, using your HOME directory and environment. Some programs will behave differently when running as root |
+| `sudo -s`                         | Begin a shell as *root*. This behaves like `su`, but `su` is often disallowed for security.                                                    |
+| `sudo -u `_`user`_` `_`command`_` | Specify a different user. `--login`  inherits the shell startup for that user.                                                                 |
+
+
 - Know about the [128K limit](https://wiki.debian.org/CommonErrorMessages/ArgumentListTooLong) on command lines. This "Argument list too long" error is common when wildcard matching large numbers of files. (When this happens alternatives like `find` and `xargs` may help.)
 
 - For a basic calculator (and of course access to Python in general), use the `python` interpreter. For example,
