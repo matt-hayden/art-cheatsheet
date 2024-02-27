@@ -615,7 +615,16 @@ A few examples of piecing together commands:
 
 - `fortune`, `ddate`, and `sl`: um, well, it depends on whether you consider steam locomotives and Zippy quotations "useful"
 
+## Optional NVIDIA hardware
 
+In the NVIDIA ecosystem, the `nvidia-smi` command is important:
+
+| Command                   |                                                             |
+| :---                      | :---                                                        |
+| `nvidia-smi`              | Sanity check. This will fail if GPU access is not supported |
+| `nvidia-smi -l`           | Regular process monitor                                     |
+| `nvidia-smi dmon -s pcuv` | Rolling performance monitor                                 |
+  
 ## macOS only
 
 These are items relevant *only* on macOS.
@@ -642,9 +651,32 @@ These items are relevant *only* on Windows.
 
 - Access the power of the Unix shell under Microsoft Windows by installing [Cygwin](https://cygwin.com/). Most of the things described in this document will work out of the box.
 
-- On Windows 10, you can use [Windows Subsystem for Linux (WSL)](https://msdn.microsoft.com/commandline/wsl/about), which provides a familiar Bash environment with Unix command line utilities.
+- On Windows 10, you can use [Windows Subsystem for Linux
+  (WSL)](https://msdn.microsoft.com/commandline/wsl/about), which provides
+  a small set of VMs for popular distributions; all modified so that:
 
-- If you mainly want to use GNU developer tools (such as GCC) on Windows, consider [MinGW](http://www.mingw.org/) and its [MSYS](http://www.mingw.org/wiki/msys) package, which provides utilities such as bash, gawk, make and grep. MSYS doesn't have all the features compared to Cygwin. MinGW is particularly useful for creating native Windows ports of Unix tools.
+  - The network interface is emulated, with no lower-level access. This is
+    enough to run services, but not diagnostics.
+
+  - systemd is not available, so background services rely on `service` from init.d
+
+  - Filesystem featutes are a compromise. Only recently can WSL2
+    [automatically shrink](https://devblogs.microsoft.com/commandline/windows-subsystem-for-linux-september-2023-update/)
+    Linux virtual disks.
+  
+  Docker Desktop installs on WSL2, so it's important to configure automatic
+  shrinking. However, access to GPU is possible if compatible drivers are
+  installed on both Windows and WSL2. For example, if CUDA development is
+  installed on Windows, and nvidia-docker2 is installed on WSL2, Docker can
+  passthrough GPU access. See the `nvidia-smi` command above
+  
+
+- If you mainly want to use GNU developer tools (such as GCC) on Windows,
+  consider [MinGW](http://www.mingw.org/) and its
+  [MSYS](http://www.mingw.org/wiki/msys) package, which provides utilities such
+  as bash, gawk, make and grep. MSYS doesn't have all the features compared to
+  Cygwin. MinGW is particularly useful for creating native Windows ports of
+  Unix tools. The Windows release of `git` supplies this.
 
 - Another option to get Unix look and feel under Windows is [Cash](https://github.com/dthree/cash). Note that only very few Unix commands and command-line options are available in this environment.
 
